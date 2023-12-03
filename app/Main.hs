@@ -37,7 +37,7 @@ Todo
 data App = App ConnectionPool
 
 mkYesod "App" [parseRoutes|
-/                   TodosR  GET POST
+/        TodosR  GET POST
 /#TodoId TodoR   DELETE
 |]
 
