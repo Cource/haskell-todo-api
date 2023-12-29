@@ -1,0 +1,55 @@
+* Todo API
+This is a toy project made using (and to learn) yesod and perisist libraries.
+
+** API Documentation
+*** Fields of Todo
+#+BEGIN_SRC haskell
+  title String
+  desc  String
+  done  Bool
+  from  String
+  till  String
+#+end_src
+*** Routes
+#+BEGIN_SRC haskell
+  /        TodosR  GET POST
+  /#TodoId TodoR   DELETE PATCH
+#+END_SRC
+**** Request body formats
+The json body to be passed with the request for certain routes
+***** POST /
+All the fields of Todo mentioned in [[Fields of Todo]] has to be passed in with
+the appropriate type values
+***** PATCH /:id
+An *'op'* field with two types of operations as a string:
+- "ChangeVal"
+    eg: ~{"op": "ChangeVal", "field": "title", "value": "Document the API"}~
+- "ToggleDone"
+  eg: ~{"op": "ToggleDone"}~
+  
+based on what the value of op is, an optional *'field'* field has to be passed in
+which takes the values:
+- "title"
+- "desc"
+- "till"
+indicating which field needs to be updated, along with a *'value'* field with
+the new value for the field.
+** Run / Install
+There are two ways to compile this project; using the nix package manager, or
+using cabal.
+*** Using Nix
+This would be the easiest method, if you already have nix installed. If you
+want to install the nix package manager (its pretty cool) into your current linux system check out the [[https://nixos.org/download.html][official
+website]].
+#+BEGIN_SRC
+nix-build
+#+END_SRC
+
+*** Using Cabal
+If you do not want to use nix, or if you want a less invasive setup, directly
+use cabal instead. you can install cabal using the package manager provided by
+your system.
+#+BEGIN_SRC
+cabal update
+cabal run
+#+END_SRC
