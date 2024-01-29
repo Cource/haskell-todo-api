@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveAnyClass             #-}
@@ -12,7 +13,7 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns               #-}
 
 import Yesod
 import Yesod.Core
@@ -53,7 +54,7 @@ instance YesodPersist App where
 getTodosR :: Handler Value
 getTodosR = do
   todos <- runDB $ selectList [] [Asc TodoId]
-  returnJson $ map entityVal todos
+  returnJson $ map (\(Entity key value) -> (key, value)) todos
 
 postTodosR :: Handler String
 postTodosR = do
@@ -76,19 +77,16 @@ data UpdateRequest
   | ChangeTitle String
   | ChangeDesc String
   | ChangeTill String
+  deriving Show
 
 instance FromJSON UpdateRequest where
   parseJSON (Object v) = do
-    (op::String)    <- v .: "op"
-    (field::String) <- v .: "field"
-    case op of
-      "ChangeVal" -> do
-        val <- v .: "value"
-        case field of
-          "title" -> return $ ChangeTitle val
-          "desc"  -> return $ ChangeDesc val
-          "till"  -> return $ ChangeTill val
-      "ToggleDone" -> return ToggleDone
+    op <- v .: "operation"
+    case op::String of
+      "ChangeTitle" -> ChangeTitle <$> v .: "value"
+      "ChangeDesc"  -> ChangeDesc  <$> v .: "value"
+      "ChangeTill"  -> ChangeTill  <$> v .: "value"
+      "ToggleDone"  -> return ToggleDone
 
 patchTodoR :: TodoId -> Handler String
 patchTodoR todoId = do
@@ -98,14 +96,15 @@ patchTodoR todoId = do
     Nothing -> do
       sendResponseStatus status404 ("Todo item not found"::Text)
     Just todo -> do
-      dbAction <- case body of
-                    Success updateReq -> case updateReq of
-                      ToggleDone ->
-                        updatedb [TodoDone =. (not $ todoDone todo)]
-                      ChangeTitle newTitle -> updatedb [TodoTitle =. newTitle]
-                      ChangeDesc newDesc -> updatedb [TodoDesc =. newDesc]
-                      ChangeTill newTill -> updatedb [TodoTill =. newTill]
-                    Error _ -> sendResponseStatus status400 ("Invalid request"::Text)
+      dbAction <-
+        case body of
+          Success updateReq -> case updateReq of
+            ToggleDone ->
+              updatedb [TodoDone =. (not $ todoDone todo)]
+            ChangeTitle newTitle -> updatedb [TodoTitle =. newTitle]
+            ChangeDesc newDesc -> updatedb [TodoDesc =. newDesc]
+            ChangeTill newTill -> updatedb [TodoTill =. newTill]
+          Error _ -> sendResponseStatus status400 ("Invalid request"::Text)
       sendResponseStatus status204 ("Updated records"::Text)
   where
     updatedb dbAction = runDB $ update todoId dbAction

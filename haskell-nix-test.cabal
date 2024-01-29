@@ -68,7 +68,7 @@ executable haskell-nix-test
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.16.4.0,
+    Build-depends:    base >=4.16.4.0,
                       yesod,
                       yesod-core,
                       persistent-sqlite,
